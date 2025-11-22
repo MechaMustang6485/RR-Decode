@@ -4,7 +4,6 @@ package org.firstinspires.ftc.teamcode.DecodeDrive;
 
 
 import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -18,8 +17,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-
-import java.util.List;
 
 
 /**
@@ -88,7 +85,7 @@ import java.util.List;
 
 //@Disabled
 @TeleOp(group = "Primary")
-public class DecodeDrive extends LinearOpMode {
+public class DecoTest extends LinearOpMode {
 
     DcMotor leftFront;
     //private double frontLeftSensitivity = 0.5;
@@ -107,7 +104,6 @@ public class DecodeDrive extends LinearOpMode {
     private Servo stopper;
     private DcMotorEx revolver;
 
-
     private double armpos = 0.6;
     private double armshootpos = 0.3;
     private int revolverpos = 96;
@@ -120,7 +116,6 @@ public class DecodeDrive extends LinearOpMode {
         initarm();
         initstopper();
         initRevolver(13);
-        initlimelight();
         driveTrain();
     }
 
@@ -158,12 +153,6 @@ public class DecodeDrive extends LinearOpMode {
 
     }
 
-    public void initlimelight(){
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(6);
-        limelight.setPollRateHz(100);
-    }
-
     private void initarm() {
         arm = hardwareMap.get(Servo.class, "arm");
         arm.setDirection(Servo.Direction.FORWARD);
@@ -177,10 +166,21 @@ public class DecodeDrive extends LinearOpMode {
     }
 
     public void initLimeLight(){
-        //limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        //limelight.pipelineSwitch(1);
-        //limelight.setPollRateHz(100);
-        //limelight.start();
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight.pipelineSwitch(8);
+        limelight.setPollRateHz(100);
+        imu = hardwareMap.get(IMU.class, "imu");
+        YawPitchRollAngles oriontation = imu.getRobotYawPitchRollAngles();
+        limelight.updateRobotOrientation(oriontation.getYaw());
+        LLResult llResult = limelight.getLatestResult();
+        if (llResult != null && llResult.isValid()) {
+            Pose3D botPose = llResult.getBotpose_MT2();
+            telemetry.addData("Tx", llResult.getTx());
+            telemetry.addData("Ty", llResult.getTy());
+            telemetry.addData("Ta", llResult.getTa());
+            telemetry.addData("BotPose", botPose.toString());
+            telemetry.addData("Yaw", botPose.getOrientation().getYaw());
+        }
     }
 
     private void initServo() {
@@ -201,58 +201,13 @@ public class DecodeDrive extends LinearOpMode {
             imuDriveInit();
             TeleOpControls();
             slotTelemetry();
-            motortelemetry();
             telemetry.update();
+            limelight.start();
         }
     }
-
-    public void limerWork(){
-        YawPitchRollAngles oriontation = imu.getRobotYawPitchRollAngles();
-        limelight.updateRobotOrientation(oriontation.getYaw());
-        LLResult llResult = limelight.getLatestResult();
-        if (llResult != null && llResult.isValid()) {
-            List<LLResultTypes.FiducialResult> fiducialResults = llResult.getFiducialResults();
-            for (LLResultTypes.FiducialResult fr : fiducialResults) {
-                telemetry.addData("Fiducial", "ID: %d, Family: %s, X: %.2f, Y: %.2f", fr.getFiducialId(), fr.getFamily(), fr.getTargetXDegrees(), fr.getTargetYDegrees());
-                if (llResult != null && llResult.isValid()) {
-                    Pose3D botPose = llResult.getBotpose_MT2();
-                    telemetry.addData("Tx", llResult.getTx());
-                    telemetry.addData("space",fr.getRobotPoseTargetSpace());
-                    telemetry.addData("Ty", llResult.getTy());
-                    telemetry.addData("Ta", llResult.getTa());
-                    telemetry.addData("BotPose", botPose.toString());
-                    telemetry.addData("Yaw", botPose.getOrientation().getYaw());
-
-
-                    if (llResult.getTy() >= -8){
-                       drve.Right(0.2);
-                    }
-
-
-                    double id = fr.getFiducialId();
-
-                    if(llResult.getTx() >= -8 && id == 20){
-                        if(gamepad2.right_trigger >= 1){
-                            stopper.setPosition(0.3);
-                            sleep(20);
-                            shooter.setPower(1);
-                            sleep(20);
-                            arm.setPosition(armshootpos);
-                            slotTelemetry();
-
-                        }
-                    }
-
-                }
-            }
-        }
-
-    }
-
 
     public void imuDriveInit() {
         // Retrieve the IMU from the hardware map
-        IMU imu = hardwareMap.get(IMU.class, "imu");
         // Adjust the orientation parameters to match your robot
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
@@ -293,27 +248,23 @@ public class DecodeDrive extends LinearOpMode {
     }
 
     private void TeleOpControls() {
-        limerWork();
-        //intake
+
         if (gamepad2.leftBumperWasPressed()) {
             intake.setPower(1);
             slotTelemetry();
         }
 
-        //outake
         if (gamepad2.left_trigger >= 1) {
             stopper.setPosition(-0.3);
             intake.setPower(-1);
             slotTelemetry();
         }
 
-        //dead
         if (gamepad2.dpad_left) {
             intake.setPower(0);
             slotTelemetry();
         }
 
-        //shoot
         if (gamepad2.right_trigger >= 1) {
             stopper.setPosition(0.3);
             sleep(20);
@@ -323,28 +274,25 @@ public class DecodeDrive extends LinearOpMode {
             slotTelemetry();
         }
 
-        //arm override nutral
         if (gamepad2.dpadDownWasPressed()) {
             arm.setPosition(0);
             slotTelemetry();
         }
 
-        //arm overide shoot
         if (gamepad2.dpadUpWasPressed()) {
             arm.setPosition(armshootpos);
             slotTelemetry();
         }
 
 
-        //shoot max cutpower
-        if (gamepad2.right_bumper) {
+        /* if (gamepad2.right_bumper) {
             stopper.setPosition(-0.3);
             sleep(10);
             arm.setPosition(armpos);
             sleep(10);
             shooter.setPower(0);
             slotTelemetry();
-        }
+        } */
 
         if (gamepad2.dpadRightWasPressed()) {
             stopper.setPosition(0.3);
@@ -399,7 +347,7 @@ public class DecodeDrive extends LinearOpMode {
     }
 
     public void slotTelemetry(){
-        telemetry.addLine("Left Trigger = Intake");
+        /* telemetry.addLine("Left Trigger = Intake");
         telemetry.addLine("Left Bumper = Outtake");
         telemetry.addLine("Dpad Left = Stop Intake/Outtake");
         telemetry.addLine("Dpad Up = Arm Shoot Pos");
@@ -410,14 +358,7 @@ public class DecodeDrive extends LinearOpMode {
         telemetry.addData("Shooter Power: ", shooter.getPower());
         telemetry.addData("Intake Power: ", intake.getPower());
         telemetry.addData("Stopper Pos: ", stopper.getPosition());
-        telemetry.addData("Arm Pos: ", arm.getPosition());
-        telemetry.update();
-    }
-
-    public void motortelemetry() {
-        telemetry.addData("leftFront: Position", leftFront.getCurrentPosition());
-        telemetry.addData("leftBack: Position", leftBack.getCurrentPosition());
-        telemetry.addData("rightFront: Position", rightFront.getCurrentPosition());
-        telemetry.addData("rightBack: Position", rightBack.getCurrentPosition());
+        telemetry.addData("Arm Pos: ", arm.getPosition()); */
+        //telemetry.update();
     }
 }

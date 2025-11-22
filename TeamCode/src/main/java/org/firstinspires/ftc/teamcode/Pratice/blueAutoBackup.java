@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.DecodeDrive;
+package org.firstinspires.ftc.teamcode.Pratice;
 
 
 
@@ -26,7 +26,7 @@ public final class blueAutoBackup extends LinearOpMode {
         Actions.runBlocking(
                 drive.actionBuilder(new Pose2d(0,0,0))
                         .lineToXConstantHeading(30.3)
-                        .strafeToLinearHeading(new Vector2d(30,-28), Math.toRadians(0), (pose2dDual, posePath, v) -> 40)
+                        .strafeToLinearHeading(new Vector2d(30.3,-28), Math.toRadians(0), (pose2dDual, posePath, v) -> 40)
                         .build());
 
     }

@@ -28,7 +28,7 @@ import org.firstinspires.ftc.teamcode.MecanumDrive;
 @Autonomous
 public final class Back extends LinearOpMode {
     public void initHardware() {
-        initRevolver();
+        initRevolver(13);
         initShooter();
         initArmOne();
 
@@ -43,10 +43,12 @@ public final class Back extends LinearOpMode {
         shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
-    public void initRevolver() {
+    public void initRevolver(double PIDposition) {
         int revinit = 96;
-        DcMotor revolver = hardwareMap.get(DcMotor.class, "revolver");
-        revolver.setDirection(DcMotor.Direction.FORWARD);
+        DcMotorEx revolver = hardwareMap.get(DcMotorEx.class, "revolver");
+        revolver.setDirection(DcMotorEx.Direction.FORWARD);
+        revolver.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        revolver.setPositionPIDFCoefficients(PIDposition);
         revolver.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         revolver.setPower(0);
         revolver.setTargetPosition(revinit);
@@ -55,25 +57,25 @@ public final class Back extends LinearOpMode {
 
     public void initArmOne() {
         Servo arm = hardwareMap.get(Servo.class, "arm");
-        arm.setDirection(Servo.Direction.REVERSE);
-        double arminit = 1;
+        arm.setDirection(Servo.Direction.FORWARD);
+        double arminit = 0;
         arm.setPosition(arminit);
-
     }
+
     @Override
     public void runOpMode() throws InterruptedException {
         MecanumDrive drive = new MecanumDrive(hardwareMap , new Pose2d(0,0,0));
 
         DcMotor shooter = hardwareMap.get(DcMotor.class, "shooter");
         Servo arm = hardwareMap.get(Servo.class, "arm");
-        DcMotor revolver = hardwareMap.get(DcMotor.class, "revolver");
+        DcMotorEx revolver = hardwareMap.get(DcMotorEx.class, "revolver");
 
         int slot1 =96;
-        int slot2 =195;
-        int slot3 =288;
+        int slot2 =192;
+        int slot3 = 384;
 
-        double armDown = 1;
-        double armUp = 0.8;
+        double armDown = 0;
+        double armUp = 0.3;
 
         initHardware();
 
@@ -81,15 +83,22 @@ public final class Back extends LinearOpMode {
 
         Actions.runBlocking(
                 drive.actionBuilder(new Pose2d(0,0,0))
-                        .stopAndAdd(new Shooter(shooter,1,10))
+                        .stopAndAdd(new Shooter(shooter,1,15))
+                        .waitSeconds(2.5)
                         .stopAndAdd(new armAction(arm,armUp))
                         .stopAndAdd(new armAction(arm,armDown))
-                        .stopAndAdd(new Revolver(revolver,slot1))
-                        .stopAndAdd(new armAction(arm,armUp))
-                        .stopAndAdd(new armAction(arm,armDown))
+                        .waitSeconds(2)
                         .stopAndAdd(new Revolver(revolver,slot2))
+                        .waitSeconds(2)
                         .stopAndAdd(new armAction(arm,armUp))
-                        .stopAndAdd(new armAction(arm,armDown))
+                        .waitSeconds(0.5)
+                        .stopAndAdd(new armAction(arm,armDown))//shot2
+                        .waitSeconds(2)
+                        .stopAndAdd(new Revolver(revolver,slot3))
+                        .waitSeconds(2)
+                        .stopAndAdd(new armAction(arm, armUp))
+                        .waitSeconds(0.5)
+                        .stopAndAdd(new armAction(arm,armDown))//shot3
                         .lineToX(30)
                         .build());
 
@@ -98,27 +107,25 @@ public final class Back extends LinearOpMode {
     public class Revolver implements Action {
         private boolean initialized = false;
         ElapsedTime timer;
-        DcMotor revolver;
+        DcMotorEx revolver;
         int revopos;
 
 
-
-        public Revolver(DcMotor r, int position) {
+        public Revolver(DcMotorEx r, int position) {
             this.revolver = r;
             this.revopos = position;
-
         }
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             if (!initialized) {
                 timer = new ElapsedTime();
-                revolver.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                revolver.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
                 revolver.setTargetPosition(revopos);
-                revolver.setPower(0.5);
+                revolver.setPower(1);
                 initialized = true;
             }
-            return timer.seconds() < 3;
+            return timer.seconds() < 0.1;
         }
 
 
@@ -145,7 +152,7 @@ public final class Back extends LinearOpMode {
                 shooter.setPower(power);
                 initialized = true;
             }
-            return timer.seconds() < 3;
+            return timer.seconds() < 0.1;
         }
 
 
