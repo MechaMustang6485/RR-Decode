@@ -1,14 +1,10 @@
-package org.firstinspires.ftc.teamcode.DecodeDrive;
+package org.firstinspires.ftc.teamcode.TeleOP;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
-import org.firstinspires.ftc.vision.apriltag.AprilTagMetadata;
-
-import java.security.PublicKey;
 
 @Autonomous
 public class AprilTagWebcamExample extends OpMode {

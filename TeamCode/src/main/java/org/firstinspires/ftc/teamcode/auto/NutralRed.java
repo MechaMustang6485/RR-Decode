@@ -1,8 +1,4 @@
-package org.firstinspires.ftc.teamcode.DecodeDrive;
-
-
-
-
+package org.firstinspires.ftc.teamcode.auto;
 
 
 
@@ -13,20 +9,21 @@ import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 
-//@Disabled
 @Autonomous
-public final class Back extends LinearOpMode {
+public final class NutralRed extends LinearOpMode {
+
+
     public void initHardware() {
         initRevolver(13);
         initShooter();
@@ -62,9 +59,10 @@ public final class Back extends LinearOpMode {
         arm.setPosition(arminit);
     }
 
+
     @Override
     public void runOpMode() throws InterruptedException {
-        MecanumDrive drive = new MecanumDrive(hardwareMap , new Pose2d(0,0,0));
+        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
 
         DcMotor shooter = hardwareMap.get(DcMotor.class, "shooter");
         Servo arm = hardwareMap.get(Servo.class, "arm");
@@ -75,22 +73,22 @@ public final class Back extends LinearOpMode {
         int slot3 = 384;
 
         double armDown = 0;
-        double armUp = 0.3;
+        double armUp = 0.15;
 
         initHardware();
-
         waitForStart();
 
         Actions.runBlocking(
-                drive.actionBuilder(new Pose2d(0,0,0))
-                        .stopAndAdd(new Shooter(shooter,1,15))
-                        .waitSeconds(2.5)
-                        .stopAndAdd(new armAction(arm,armUp))
-                        .stopAndAdd(new armAction(arm,armDown))
+                drive.actionBuilder(new Pose2d(0, 0, 0))
+                        .lineToX(-70)
+                        .stopAndAdd(new Shooter(shooter,0.8,15))
+                        .waitSeconds(1)
+                        .stopAndAdd(new armAction(arm, armUp))
+                        .stopAndAdd(new armAction(arm,armDown))//shot1
                         .waitSeconds(2)
                         .stopAndAdd(new Revolver(revolver,slot2))
-                        .waitSeconds(2)
-                        .stopAndAdd(new armAction(arm,armUp))
+                        .waitSeconds(1)
+                        .stopAndAdd(new armAction(arm, armUp))
                         .waitSeconds(0.5)
                         .stopAndAdd(new armAction(arm,armDown))//shot2
                         .waitSeconds(2)
@@ -99,7 +97,7 @@ public final class Back extends LinearOpMode {
                         .stopAndAdd(new armAction(arm, armUp))
                         .waitSeconds(0.5)
                         .stopAndAdd(new armAction(arm,armDown))//shot3
-                        .lineToX(30)
+                        .strafeToLinearHeading(new Vector2d(-70,-32), Math.toRadians(0), (pose2dDual, posePath, v) -> 40)
                         .build());
 
     }
@@ -183,13 +181,5 @@ public final class Back extends LinearOpMode {
 
     }
 
-
-
 }
-
-
-
-
-
-
 

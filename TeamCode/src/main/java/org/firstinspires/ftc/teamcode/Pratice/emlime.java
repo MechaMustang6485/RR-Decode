@@ -80,6 +80,7 @@ public class emlime extends OpMode {
             telemetry.addData("Ta", llResult.getTa());
             telemetry.addData("BotPose", botPose.toString());
             telemetry.addData("Yaw", botPose.getOrientation().getYaw());
+
                 double id = fr.getFiducialId();
             if (id == 20) {
                 shooter.setPower(1);

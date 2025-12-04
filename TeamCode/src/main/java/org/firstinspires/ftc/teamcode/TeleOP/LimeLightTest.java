@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.DecodeDrive;
+package org.firstinspires.ftc.teamcode.TeleOP;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
@@ -32,8 +32,9 @@ public class LimeLightTest extends OpMode {
     @Override
     public void init() {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(8);
+        limelight.pipelineSwitch(6);
         limelight.setPollRateHz(100);
+
         imu = hardwareMap.get(IMU.class, "imu");
         RevHubOrientationOnRobot revHubOrientationOnRobot = new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
@@ -65,30 +66,7 @@ public class LimeLightTest extends OpMode {
 
     @Override
     public void loop() {
-        YawPitchRollAngles oriontation = imu.getRobotYawPitchRollAngles();
-        limelight.updateRobotOrientation(oriontation.getYaw());
-        LLResult llResult = limelight.getLatestResult();
-        if (llResult != null && llResult.isValid()) {
-            List<LLResultTypes.FiducialResult> fiducialResults = llResult.getFiducialResults();
-            for (LLResultTypes.FiducialResult fr : fiducialResults) {
-                telemetry.addData("Fiducial", "ID: %d, Family: %s, X: %.2f, Y: %.2f", fr.getFiducialId(), fr.getFamily(), fr.getTargetXDegrees(), fr.getTargetYDegrees());
-                if (llResult != null && llResult.isValid()) {
-                    Pose3D botPose = llResult.getBotpose_MT2();
-                    telemetry.addData("Tx", llResult.getTx());
-                    telemetry.addData("Ty", llResult.getTy());
-                    telemetry.addData("Ta", llResult.getTa());
-                    telemetry.addData("BotPose", botPose.toString());
-                    telemetry.addData("Yaw", botPose.getOrientation().getYaw());
 
-
-                    if (llResult.getTx() >= -8) {
-                        shooter.setPower(1);
-                    }
-
-                    if (llResult.getTx() <= -3) {
-                        shooter.setPower(0.5);
-                    }
-                }
 
                 double leftJoyStickXAxis = gamepad1.left_stick_x * 1.1; //1.1 use to counteract imperfect strafing
                 double leftJoyStickYAxis = -gamepad1.left_stick_y; //y stick value is reversed
@@ -120,6 +98,52 @@ public class LimeLightTest extends OpMode {
                 if (gamepad1.back) {
                     imu.resetYaw();
                 }
+                if(gamepad1.b){
+                    shooter.setPower(0);
+                }
+
+                boolean limelightLoopEnabled = false;
+
+
+        if (gamepad1.aWasPressed()) {
+            limelightLoopEnabled = !limelightLoopEnabled;
+        }
+
+        if (limelightLoopEnabled){
+            YawPitchRollAngles oriontation = imu.getRobotYawPitchRollAngles();
+            limelight.updateRobotOrientation(oriontation.getYaw());
+            LLResult llResult = limelight.getLatestResult();
+            if (llResult != null && llResult.isValid()) {
+                List<LLResultTypes.FiducialResult> fiducialResults = llResult.getFiducialResults();
+                for (LLResultTypes.FiducialResult fr : fiducialResults) {
+                    telemetry.addData("Fiducial", "ID: %d, Family: %s, X: %.2f, Y: %.2f", fr.getFiducialId(), fr.getFamily(), fr.getTargetXDegrees(), fr.getTargetYDegrees());
+
+                    if (llResult != null && llResult.isValid()) {
+                        Pose3D botPose = llResult.getBotpose_MT2();
+                        telemetry.addData("BotPose", botPose.toString());
+                        telemetry.addData("Yaw", botPose.getOrientation().getYaw());
+
+
+                        if (llResult.getTy() <= -4) {
+                            shooter.setPower(1);
+                        }
+
+                        if (llResult.getTy() >= -9) {
+                            shooter.setPower(0.8);
+                        }
+
+
+
+
+                    }
+
+
+                }
+            telemetry.addData("Tx", llResult.getTx());
+            telemetry.addData("Ty", llResult.getTy());
+            telemetry.addData("Ta", llResult.getTa());
+            telemetry.addData("power", shooter.getPower());
+            telemetry.update();
             }
         }
     }

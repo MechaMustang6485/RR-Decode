@@ -4,6 +4,8 @@ package org.firstinspires.ftc.teamcode.Pratice;
 
 
 
+import android.graphics.Color;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -30,7 +32,7 @@ public class S extends LinearOpMode{
     private boolean touchVal=false;
     private boolean emptySlot;
     NormalizedColorSensor colorsensor;
-    private boolean green;
+    private boolean greeen;
 
     // if over shoot experiment with PIDposition to tune
     private double PIDposition=13;
@@ -56,12 +58,12 @@ public class S extends LinearOpMode{
 
     public void initHardware() {
         initRevolver(PIDposition);
-        initShooter();
+        //initShooter();
         initColorSens();
-        initIntake();
-        initArm();
-        initStopper();
-        initTouch();
+        //initIntake();
+        //initArm();
+        //initStopper();
+        //initTouch();
         initColorSens();
 
     }
@@ -72,19 +74,45 @@ public class S extends LinearOpMode{
     }
     public void initColorSens(){
         colorsensor=hardwareMap.get(NormalizedColorSensor.class,"colorSensor");
-        colorsensor.setGain(4);
+        colorsensor.setGain(12);
     }
-    public DetectedColor getColor(){
-        NormalizedRGBA colors = colorsensor.getNormalizedColors();
-        float normPurple,normGreen;
-        normGreen=colors.green/colors.alpha;
-        normPurple=colors.red/colors.alpha;
-        if (normGreen>=0.0350 && normPurple<=0.0400){
-            green=true;
-        }
 
-        telemetry.addData("Green",normGreen);
-        telemetry.addData("Purple",normPurple);
+    public DetectedColor getColor(){
+            // Read normalized color data
+            NormalizedRGBA colors = colorsensor.getNormalizedColors();
+            float red = colors.red;
+            float green = colors.green;
+            float blue = colors.blue;
+
+            // Convert to HSV (NOT HSL!)
+            float[] hsv = new float[3];
+            Color.RGBToHSV((int) (red * 255), (int) (green * 255), (int) (blue * 255), hsv);
+
+            float hue = hsv[0];        // 0–360
+            float sat = hsv[1];        // 0–1
+            float val = hsv[2];        // 0–1 (brightness)
+
+            // ----- Color thresholds -----
+
+            // Purple: 250–300
+            boolean isPurple =
+                    ((hue > 180 && hue < 240)) &&
+                            val > 0.01;     // allow dark
+
+            // Green: 80–160
+            boolean isGreen =
+                    (hue > 120 && hue < 150) &&
+                            val > 0.03;
+
+            if (isGreen) {
+                greeen=true;
+            } else if (isPurple) {
+                greeen=false;
+            }
+
+
+        telemetry.addData("Green",isGreen);
+        telemetry.addData("Purple",isPurple);
         telemetry.addLine("a PPG");
         telemetry.addLine("b GPP");
         telemetry.addLine("x PGP");
@@ -189,7 +217,7 @@ public class S extends LinearOpMode{
     }
     public void initStart(){
         revolver.setPower(0.5);
-        if(green){
+        if(greeen){
             revolver.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
             revolver.setPower(0);
             revolver.setTargetPosition(0);

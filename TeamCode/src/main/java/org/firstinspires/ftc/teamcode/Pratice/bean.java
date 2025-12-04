@@ -1,9 +1,17 @@
-package org.firstinspires.ftc.teamcode.DecodeDrive;
+package org.firstinspires.ftc.teamcode.Pratice;
 
 
 
 
-import com.qualcomm.hardware.limelightvision.LLResult;
+
+
+import android.graphics.Color;
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.arcrobotics.ftclib.controller.PIDController;
+import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -11,12 +19,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 
 /**
@@ -84,8 +94,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
  */
 
 //@Disabled
+@Config
 @TeleOp(group = "Primary")
-public class DecoTest extends LinearOpMode {
+public class bean extends LinearOpMode {
 
     DcMotor leftFront;
     //private double frontLeftSensitivity = 0.5;
@@ -103,10 +114,25 @@ public class DecoTest extends LinearOpMode {
     private Limelight3A limelight;
     private Servo stopper;
     private DcMotorEx revolver;
+    private NormalizedColorSensor sensor;
+    private TouchSensor touch;
 
-    private double armpos = 0.6;
-    private double armshootpos = 0.3;
-    private int revolverpos = 96;
+    private PIDFController controller;
+
+    public static double p = 0.1, i = 0, d= 0;
+    public static double f = 0.000001;
+
+    public static int target = 96;
+    public static int target2 = 192;
+    public static int target3 = 284;
+
+    private final double ticks_in_degree = 700/ 180.0;
+
+    private double armpos = 0;
+    private double armshootpos = 0.15;
+    private int revolverpospos = 96;
+    private boolean touchVal = false;
+    private double rapidcount = 0;
 
     //HARDWARE
     public void initHardware() {
@@ -115,8 +141,10 @@ public class DecoTest extends LinearOpMode {
         initLimeLight();
         initarm();
         initstopper();
-        initRevolver(13);
+        initRevolver();
         driveTrain();
+        initcs();
+        initTouch();
     }
 
     public void driveTrain() {
@@ -131,6 +159,18 @@ public class DecoTest extends LinearOpMode {
         leftBack.setDirection(DcMotor.Direction.REVERSE);
     }
 
+    public void initcs() {
+        sensor = hardwareMap.get(NormalizedColorSensor.class, "colorSensor");
+        sensor.setGain(12);
+    }
+
+    public void initTouch(){
+        touch = hardwareMap.get(TouchSensor.class, "touch");
+        if (touch.getValue() == 1) {
+            touchVal = true;
+        } else touchVal = false;
+    }
+
     private void initShooter() {
         shooter=hardwareMap.get(DcMotor.class,"shooter");
         shooter.setPower(0);
@@ -140,17 +180,11 @@ public class DecoTest extends LinearOpMode {
         shooter.setDirection(DcMotorEx.Direction.REVERSE);
     }
 
-    public void initRevolver(double PIDposition){
+    public void initRevolver(){
         revolver=hardwareMap.get(DcMotorEx.class,"revolver");
         revolver.setDirection(DcMotorEx.Direction.FORWARD);
-        revolver.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-        revolver.setPositionPIDFCoefficients(PIDposition);
-        revolver.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        revolver.setPower(0);
-        revolver.setTargetPosition(96);
-        revolverpos = 96;
-        revolver.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-
+        controller = new PIDController(p, i, d);
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
     }
 
     private void initarm() {
@@ -167,20 +201,9 @@ public class DecoTest extends LinearOpMode {
 
     public void initLimeLight(){
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(8);
+        limelight.pipelineSwitch(1);
         limelight.setPollRateHz(100);
-        imu = hardwareMap.get(IMU.class, "imu");
-        YawPitchRollAngles oriontation = imu.getRobotYawPitchRollAngles();
-        limelight.updateRobotOrientation(oriontation.getYaw());
-        LLResult llResult = limelight.getLatestResult();
-        if (llResult != null && llResult.isValid()) {
-            Pose3D botPose = llResult.getBotpose_MT2();
-            telemetry.addData("Tx", llResult.getTx());
-            telemetry.addData("Ty", llResult.getTy());
-            telemetry.addData("Ta", llResult.getTa());
-            telemetry.addData("BotPose", botPose.toString());
-            telemetry.addData("Yaw", botPose.getOrientation().getYaw());
-        }
+        limelight.start();
     }
 
     private void initServo() {
@@ -202,12 +225,12 @@ public class DecoTest extends LinearOpMode {
             TeleOpControls();
             slotTelemetry();
             telemetry.update();
-            limelight.start();
         }
     }
 
     public void imuDriveInit() {
         // Retrieve the IMU from the hardware map
+        IMU imu = hardwareMap.get(IMU.class, "imu");
         // Adjust the orientation parameters to match your robot
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
@@ -248,83 +271,105 @@ public class DecoTest extends LinearOpMode {
     }
 
     private void TeleOpControls() {
+        // Read normalized color data
+        NormalizedRGBA colors = sensor.getNormalizedColors();
+        float red = colors.red;
+        float green = colors.green;
+        float blue = colors.blue;
+
+        // Convert to HSV (NOT HSL!)
+        float[] hsv = new float[3];
+        Color.RGBToHSV((int) (red * 255), (int) (green * 255), (int) (blue * 255), hsv);
+
+        float hue = hsv[0];        // 0–360
+        float sat = hsv[1];        // 0–1
+        float val = hsv[2];        // 0–1 (brightness)
+
+        // ----- Color thresholds -----
+
+        // Purple: 250–300
+        boolean isPurple =
+                (hue >= 220 && hue <= 245) &&
+                        (sat >= 0.27 && sat <= 0.4) && (val >= 0.04 && val <= 0.09);       // allow dark
+
+        // Green: 80–160
+        boolean isGreen =
+                (hue >= 140 && hue <= 160) &&
+                        (sat >= 0.6 && sat <= 0.8) && (val >= 0.02 && val <= 0.2);
+
+        // Yellow: 40–80
+        boolean isYellow =
+                (hue > 40 && hue < 80);
+
+        // White: low saturation + high brightness
+        boolean isWhite =
+                sat < 0.2 && val > 0.5;
+
 
         if (gamepad2.leftBumperWasPressed()) {
             intake.setPower(1);
-            slotTelemetry();
         }
 
         if (gamepad2.left_trigger >= 1) {
             stopper.setPosition(-0.3);
             intake.setPower(-1);
-            slotTelemetry();
         }
 
         if (gamepad2.dpad_left) {
             intake.setPower(0);
-            slotTelemetry();
         }
 
-        if (gamepad2.right_trigger >= 1) {
+        if (gamepad2.right_bumper) {
             stopper.setPosition(0.3);
             sleep(20);
             shooter.setPower(1);
-            sleep(20);
-            arm.setPosition(armshootpos);
-            slotTelemetry();
-        }
-
-        if (gamepad2.dpadDownWasPressed()) {
-            arm.setPosition(0);
-            slotTelemetry();
         }
 
         if (gamepad2.dpadUpWasPressed()) {
             arm.setPosition(armshootpos);
-            slotTelemetry();
+            sleep(500);
+            arm.setPosition(armpos);
         }
 
 
-        /* if (gamepad2.right_bumper) {
+        if (gamepad2.right_trigger >= 1) {
             stopper.setPosition(-0.3);
             sleep(10);
-            arm.setPosition(armpos);
-            sleep(10);
             shooter.setPower(0);
-            slotTelemetry();
-        } */
-
-        if (gamepad2.dpadRightWasPressed()) {
-            stopper.setPosition(0.3);
-            slotTelemetry();
         }
 
-        if (gamepad2.aWasPressed()) {
-            revolver.setPower(0.3);
-            slotTelemetry();
-        }
+        if (gamepad2.x) {
+            /* controller.setPIDF(p, i, d, f);
+            int revpose = revolver.getCurrentPosition();
+            double pid = controller.calculate(revpose, target);
+            double ff = Math.cos(Math.toRadians(target / ticks_in_degree)) * f;
 
-        if (gamepad2.xWasPressed()) {
-            if (revolverpos == 96) {
-                RevolverunToPosition(192);
-                revolverpos = 192;
-            } else if (revolverpos == 192) {
-                RevolverunToPosition(288);
-                revolverpos = 288;
-            } else {
-                RevolverunToPosition(96);
-                revolverpos = 96;
+            double power = pid + ff;
+            revolver.setPower(power);
+            telemetry.addData("pose1",revpose); */
+            double system = 1;
+
+            if (system == 1) {
+                Revolvernextslot(1);
+                system = 2;
+            } else if (system == 2) {
+                Revolvernextslot(2);
+                system = 3;
+            } else if (system == 3) {
+                Revolvernextslot(3);
+                system = 1;
             }
-            slotTelemetry();
         }//slot 1: 96, slot 2: 192, slot 3: 288
 
-        if(gamepad2.yWasPressed()) {
-            stopper.setPosition(0.3);
-            sleep(20);
-            shooter.setPower(0.8);
-            sleep(20);
-            arm.setPosition(armshootpos);
-            slotTelemetry();
+
+        if(gamepad2.y) {
+            controller.setPIDF(p, i, d, f);
+            int revpose3 = revolver.getCurrentPosition();
+            double pid2 = controller.calculate(revpose3, target3);
+            double ff2 = Math.cos(Math.toRadians(target3 / ticks_in_degree)) * f;
+
+            double power = pid2 + ff2;
+            revolver.setPower(power);
         }
 
         if (shooter.getPower() >= 0.1) {
@@ -337,28 +382,141 @@ public class DecoTest extends LinearOpMode {
             stopper.setPosition(-0.3);
         }
 
+/*
+        if (gamepad2.aWasPressed()) {
+            if(!touchVal && !isGreen) {
+                revolver.setPower(0.4);
+            } else if (touchVal && isGreen && !isPurple) {
+                revolver.setPower(0);
+            }
+        }
+
+ */
+
+        if(gamepad2.b) {//use to be bWasPressed
+            controller.setPIDF(p, i, d, f);
+            int revpose2 = revolver.getCurrentPosition();
+            double pid2 = controller.calculate(revpose2, target2);
+            double ff2 = Math.cos(Math.toRadians(target2 / ticks_in_degree)) * f;
+
+            double power = pid2 + ff2;
+            revolver.setPower(power);
+
+            /*
+            if (!touchVal && !isPurple) {
+                revolver.setPower(0.4);
+            } else if (touchVal && isPurple || !isGreen) {
+                revolver.setPower(0);
+            }
+
+             */
+        }
+
+        if (gamepad2.dpadRightWasPressed()) {
+            stopper.setPosition(0.3);
+            revolver.setPower(0.5);
+            shooter.setPower(1);
+
+            /*
+            if (rapidcount == 3) {
+                rapidcount = 0;
+                stopper.setPosition(-0.3);
+                //RevolverunToPosition(96);
+                revolverpospos = 96;
+                shooter.setPower(0);
+                arm.setPosition(armpos);
+            }
+
+            if (isPurple || isGreen) {
+                arm.setPosition(armshootpos);
+                arm.setPosition(armshootpos);
+                rapidcount = rapidcount + 1;
+            }
+
+             */
+        }
+
+
     }
 
-    public void RevolverunToPosition(int position){
-        revolver.setTargetPosition(position);
-        revolver.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        revolver.setPower(1.0);
+    public void Revolvernextslot(int slot){
+        /* controller.setPIDF(p, i, d, f);
+        int revpose = revolver.getCurrentPosition();
+        double pid = controller.calculate(revpose, target);
+        double ff = Math.cos(Math.toRadians(target / ticks_in_degree)) * f;
+
+        double power = pid + ff;
+        revolver.setPower(power);
+        telemetry.addData("pose1",revpose);
+
+        controller.setPIDF(p, i, d, f);
+        int revpose3 = revolver.getCurrentPosition();
+
+        double power = pid3 + ff2;
+        revolver.setPower(power);
+
+
+        controller.setPIDF(p, i, d, f);
+        int revpose2 = revolver.getCurrentPosition();
+        double pid2 = controller.calculate(revpose2, target2);
+        double ff2 = Math.cos(Math.toRadians(target2 / ticks_in_degree)) * f;
+
+        double power = pid2 + ff2;
+        revolver.setPower(power); */
+
+        double pids = 0;
+        double ffs = 0;
+
+        controller.setPIDF(p, i, d, f);
+        int revpose = revolver.getCurrentPosition();
+        double pid = controller.calculate(revpose, target);
+        double ff = Math.cos(Math.toRadians(target / ticks_in_degree)) * f;
+
+
+        double pid2 = controller.calculate(revpose, target2);
+        double ff2 = Math.cos(Math.toRadians(target2 / ticks_in_degree)) * f;
+
+
+        double pid3 = controller.calculate(revpose, target3);
+        double ff3 = Math.cos(Math.toRadians(target3 / ticks_in_degree)) * f;
+
+        if(slot == 1){
+            pids = pid;
+            ffs = ff;
+        } else if (slot == 2) {
+            pids = pid2;
+            ffs = ff2;
+        } else if (slot == 3) {
+            pids = pid3;
+            ffs = ff3;
+        }
+
+        double power = pids + ffs;
+
+        revolver.setPower(power);
+
+
+
+
 
     }
+
+
 
     public void slotTelemetry(){
-        /* telemetry.addLine("Left Trigger = Intake");
+        telemetry.addLine("Left Trigger = Intake");
         telemetry.addLine("Left Bumper = Outtake");
         telemetry.addLine("Dpad Left = Stop Intake/Outtake");
         telemetry.addLine("Dpad Up = Arm Shoot Pos");
         telemetry.addLine("Dpad Down = Arm Down Shoot Pos");
-        telemetry.addLine("Right Trigger = Shooter Start Far");
-        telemetry.addLine("Y Button: Shooter Start Close");
+        telemetry.addLine("Right Trigger = Shooter Start");
         telemetry.addLine("Right Bumper = Shooter Stop");
         telemetry.addData("Shooter Power: ", shooter.getPower());
         telemetry.addData("Intake Power: ", intake.getPower());
         telemetry.addData("Stopper Pos: ", stopper.getPosition());
-        telemetry.addData("Arm Pos: ", arm.getPosition()); */
-        //telemetry.update();
+        telemetry.addData("Arm Pos: ", arm.getPosition());
+        telemetry.addData("Limelight: ", limelight.getStatus().getPipelineIndex());
+        telemetry.update();
     }
 }
+

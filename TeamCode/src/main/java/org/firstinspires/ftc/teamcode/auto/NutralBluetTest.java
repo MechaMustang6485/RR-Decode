@@ -1,8 +1,10 @@
-package org.firstinspires.ftc.teamcode.DecodeDrive;
+package org.firstinspires.ftc.teamcode.auto;
 
 
 
 
+
+import android.graphics.Color;
 
 import androidx.annotation.NonNull;
 
@@ -16,20 +18,27 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 
 @Autonomous
-public final class NutralBlue extends LinearOpMode {
+public final class NutralBluetTest extends LinearOpMode {
+    public boolean touchval = false;
 
+    //still writing.
 
     public void initHardware() {
         initRevolver(13);
         initShooter();
         initArmOne();
         initintake();
+        initColor();
+        initTouch();
 
     }
 
@@ -54,6 +63,18 @@ public final class NutralBlue extends LinearOpMode {
         revolver.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
     }
 
+    public void initColor(){
+        NormalizedColorSensor sensor = hardwareMap.get(NormalizedColorSensor.class, "sensor");
+        sensor.setGain(12);
+    }
+
+    public void initTouch() {
+        TouchSensor touch = hardwareMap.get(TouchSensor.class, "touch");
+        if (touch.getValue() == 1) {
+            touchval = true;
+        } else touchval = false;
+    }
+
     public void initArmOne() {
         Servo arm = hardwareMap.get(Servo.class, "arm");
         arm.setDirection(Servo.Direction.FORWARD);
@@ -74,6 +95,7 @@ public final class NutralBlue extends LinearOpMode {
         DcMotor shooter = hardwareMap.get(DcMotor.class, "shooter");
         Servo arm = hardwareMap.get(Servo.class, "arm");
         DcMotorEx revolver = hardwareMap.get(DcMotorEx.class, "revolver");
+        NormalizedColorSensor sensor = hardwareMap.get(NormalizedColorSensor.class, "colorSensor");
 
         int slot1 =96;
         int slot2 =192;
@@ -94,31 +116,7 @@ public final class NutralBlue extends LinearOpMode {
                         //3 artifact
                         .lineToX(-70)
                         .stopAndAdd(new Shooter(shooter,0.76,15))
-                        .waitSeconds(1.5)
-                        .stopAndAdd(new armAction(arm, armUp))
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm,armDown))//shot1
-                        .waitSeconds(2)
-                        .stopAndAdd(new Revolver(revolver,slot1))
-                        .waitSeconds(1)
-                        .stopAndAdd(new armAction(arm, armUp))
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm,armDown))//shot2
-                        .waitSeconds(2)
-                        .stopAndAdd(new Revolver(revolver,slot2))
-                        .waitSeconds(2)
-                        .stopAndAdd(new armAction(arm, armUp))
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm,armDown))//shot3
-                        .strafeToLinearHeading(new Vector2d(-70,32), Math.toRadians(30), (pose2dDual, posePath, v) -> 40)
-                        .stopAndAdd(new Shooter(shooter,0,15))
-                        .waitSeconds(0.5)
-
-                        //collect artifacts
-                        .stopAndAdd(new intakeAction(intake,in,10))
-                        .lineToX(-54)
-                        .waitSeconds(0.5)
-                        .lineToX(-52)
+                        .stopAndAdd(new CRevo(revolver, sensor, 1))
                         .build());
 
     }
@@ -149,6 +147,66 @@ public final class NutralBlue extends LinearOpMode {
 
 
     }
+
+   public class CRevo implements Action {
+        private boolean inited = false;
+        ElapsedTime timer;
+        DcMotorEx revolver;
+        NormalizedColorSensor sensor;
+        public int ball = 1;
+
+        public CRevo(DcMotorEx r, NormalizedColorSensor cs, int ball) {
+            this.ball = ball;
+            this.sensor = cs;
+            this.revolver = r;
+        }
+
+       @Override
+       public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+           if (!inited) {
+               timer = new ElapsedTime();
+               revolver.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+               NormalizedRGBA colors = sensor.getNormalizedColors();
+               float red = colors.red;
+               float green = colors.green;
+               float blue = colors.blue;
+
+               // Convert to HSV (NOT HSL!)
+               float[] hsv = new float[3];
+               Color.RGBToHSV((int) (red * 255), (int) (green * 255), (int) (blue * 255), hsv);
+
+               float hue = hsv[0];        // 0–360
+               float sat = hsv[1];        // 0–1
+               float val = hsv[2];        // 0–1 (brightness)
+
+               // ----- Color thresholds -----
+
+               // Purple: 250–300
+               boolean isPurple =
+                       (hue >= 220 && hue <= 245) &&
+                               (sat >= 0.27 && sat <= 0.4) && (val >= 0.04 && val <= 0.09);       // allow dark
+
+               // Green: 80–160
+               boolean isGreen =
+                       (hue >= 140 && hue <= 160) &&
+                               (sat >= 0.6 && sat <= 0.8) && (val >= 0.02 && val <= 0.2);
+
+               if (ball == 1) {
+                   if(isGreen) {
+                       revolver.setPower(0);
+                   } else revolver.setPower(0.4);
+               }
+
+               if (ball == 2) {
+                   if (isPurple) {
+                       revolver.setPower(0);
+                   } else revolver.setPower(0.4);
+               }
+               inited = true;
+           }
+           return timer.seconds() < 0.2;
+       }
+   }
 
     //custom action shooter
     public class Shooter implements Action {
