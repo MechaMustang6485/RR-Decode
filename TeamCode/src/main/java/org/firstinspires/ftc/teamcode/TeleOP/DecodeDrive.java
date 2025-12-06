@@ -11,6 +11,8 @@ import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
@@ -28,7 +30,11 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.auto.Back;
+
+import java.util.List;
 
 
 /**
@@ -127,6 +133,10 @@ public class DecodeDrive extends LinearOpMode {
     private int BallCount = 0;
     private boolean ballfull = false;
 
+    private boolean LEDtimer = false;
+    private int LEDdelay = 2000;
+    RevBlinkinLedDriver lights;
+
     //HARDWARE
     public void initHardware() {
         initServo();
@@ -138,6 +148,7 @@ public class DecodeDrive extends LinearOpMode {
         driveTrain();
         initCS();
         initTouch();
+        initLED();
     }
 
     public void driveTrain() {
@@ -157,6 +168,10 @@ public class DecodeDrive extends LinearOpMode {
         if (touch.getValue() >= 0.1) {
             touchVal = 1;
         } else touchVal = 0;
+    }
+    public void initLED() {
+        lights = hardwareMap.get(RevBlinkinLedDriver.class,"lights");
+        lights.setPattern(RevBlinkinLedDriver.BlinkinPattern.TWINKLES_RAINBOW_PALETTE);
     }
 
     public void initCS() {
@@ -214,6 +229,18 @@ public class DecodeDrive extends LinearOpMode {
         intake.setPower(0);
     }
 
+
+    public void resetLED() {
+        LEDtimer = true;
+        resetRuntime();
+    }
+    public void updateLED() {
+        if (LEDtimer && time >= 90) {//2:10
+            lights.setPattern(RevBlinkinLedDriver.BlinkinPattern.VIOLET);
+        }
+
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     @Override
     public void runOpMode() {
@@ -223,8 +250,10 @@ public class DecodeDrive extends LinearOpMode {
 
         }
         waitForStart();
+        resetLED();
         while (opModeIsActive()) {
             imuDriveInit();
+            updateLED();
             TeleOpControls();
             slotTelemetry();
             telemetry.update();
@@ -232,14 +261,21 @@ public class DecodeDrive extends LinearOpMode {
     }
 
     public void imuDriveInit() {
-        // Retrieve the IMU from the hardware map
+       /* // Retrieve the IMU from the hardware map
         IMU imu = hardwareMap.get(IMU.class, "imu");
         // Adjust the orientation parameters to match your robot
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
                 RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
         // Without this, the REV Hub's orientation is assumed to be logo up / USB forward
-        imu.initialize(parameters);
+        imu.initialize(parameters); */
+
+        imu = hardwareMap.get(IMU.class, "imu");
+        RevHubOrientationOnRobot revHubOrientationOnRobot = new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD);
+
+        imu.initialize(new IMU.Parameters(revHubOrientationOnRobot));
 
         double leftJoyStickXAxis = gamepad1.left_stick_x * 1.1; //1.1 use to counteract imperfect strafing
         double leftJoyStickYAxis = -gamepad1.left_stick_y; //y stick value is reversed
@@ -315,10 +351,50 @@ public class DecodeDrive extends LinearOpMode {
             intake.setPower(0);
         }
 
+
+
         if (gamepad2.right_bumper) {
             stopper.setPosition(0.3);
-            sleep(20);
-            shooter.setPower(1);
+            YawPitchRollAngles oriontation = imu.getRobotYawPitchRollAngles();
+            limelight.updateRobotOrientation(oriontation.getYaw());
+            LLResult llResult = limelight.getLatestResult();
+            if (llResult != null && llResult.isValid()) {
+                List<LLResultTypes.FiducialResult> fiducialResults = llResult.getFiducialResults();
+                for (LLResultTypes.FiducialResult fr : fiducialResults) {
+                    telemetry.addData("Fiducial", "ID: %d, Family: %s, X: %.2f, Y: %.2f", fr.getFiducialId(), fr.getFamily(), fr.getTargetXDegrees(), fr.getTargetYDegrees());
+
+                    if (llResult != null && llResult.isValid()) {
+                        Pose3D botPose = llResult.getBotpose_MT2();
+                        telemetry.addData("BotPose", botPose.toString());
+                        telemetry.addData("Yaw", botPose.getOrientation().getYaw());
+
+
+                        if (llResult.getTy() <= -4) {
+                            shooter.setPower(0.95);
+                        }
+
+                        if (llResult.getTy() >= -9) {
+                            shooter.setPower(0.8);
+                        }
+
+
+                    }
+
+
+                }
+            }
+            else{
+                shooter.setPower(0.8);
+            }
+        }
+        if(shooter.getPower() == 0.8){
+            lights.setPattern(RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_FOREST_PALETTE);
+
+        }
+
+        if(shooter.getPower() == 0.95){
+            lights.setPattern(RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_FOREST_PALETTE);
+
         }
 
         if (gamepad2.dpadDownWasPressed()) {
@@ -340,8 +416,12 @@ public class DecodeDrive extends LinearOpMode {
             BallCount = 0;
         }
 
-        if (gamepad2.dpadRightWasPressed()) {
+        if (gamepad1.right_trigger >= 1) {
             stopper.setPosition(0.3);
+            sleep(10);
+            arm.setPosition(0);
+            sleep(10);
+            shooter.setPower(1);
         }
 
         if (gamepad2.xWasPressed()) {
@@ -357,6 +437,20 @@ public class DecodeDrive extends LinearOpMode {
             }
         }//slot 1: 96, slot 2: 192, slot 3: 288
 
+        if (gamepad1.dpad_left){
+            revolver.setPower(0.6);
+        }
+        if (gamepad1.dpadLeftWasReleased()){
+            revolver.setPower(0);
+        }
+
+        if (gamepad1.dpad_right){
+            revolver.setPower(-0.3);
+        }
+        if (gamepad1.dpadRightWasReleased()){
+            revolver.setPower(0);
+        }
+
         if(gamepad2.yWasPressed()) {
             stopper.setPosition(0.3);
             sleep(20);
@@ -368,7 +462,9 @@ public class DecodeDrive extends LinearOpMode {
             stopper.setPosition(0.3);
         }
 
-        if (intake.getPower() >= 0.1) {
+
+
+        if (intake.getPower() < 0) {
             shooter.setPower(0);
             stopper.setPosition(-0.3);
         }

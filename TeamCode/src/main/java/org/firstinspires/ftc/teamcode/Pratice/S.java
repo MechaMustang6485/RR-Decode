@@ -6,6 +6,7 @@ package org.firstinspires.ftc.teamcode.Pratice;
 
 import android.graphics.Color;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -20,6 +21,7 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 /**
  * Config file
  */
+@Disabled
 @TeleOp(group="Primary")
 public class S extends LinearOpMode{
     private Servo arm;

@@ -1,11 +1,13 @@
 package org.firstinspires.ftc.teamcode.TeleOP;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
+@Disabled
 @Autonomous
 public class AprilTagWebcamExample extends OpMode {
     OpenCV apriltagwebcam = new OpenCV();

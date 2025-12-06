@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.Pratice; // change if needed
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -18,6 +19,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.List;
 
+@Disabled
 @TeleOp(name = "FieldCentric_LL3A_Tag24_NoAdjust", group = "TeleOp")
 public class men extends LinearOpMode {
 

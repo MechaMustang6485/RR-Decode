@@ -2,9 +2,11 @@ package org.firstinspires.ftc.teamcode.Pratice;
 
 
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+@Disabled
 @TeleOp
 public class LED extends LinearOpMode {
 
@@ -14,7 +16,7 @@ public class LED extends LinearOpMode {
 
     public void initLED() {
         lights = hardwareMap.get(RevBlinkinLedDriver.class,"lights");
-        lights.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
+        lights.setPattern(RevBlinkinLedDriver.BlinkinPattern.BREATH_RED);
     }
 
     public void resetLED() {
@@ -23,9 +25,6 @@ public class LED extends LinearOpMode {
     }
 
     public void updateLED() {
-        if(LEDtimer && time < 1){
-            lights.setPattern(RevBlinkinLedDriver.BlinkinPattern.TWINKLES_RAINBOW_PALETTE);
-        }
         if (LEDtimer && time < 120) {//2:10
             lights.setPattern(RevBlinkinLedDriver.BlinkinPattern.AQUA);
         }
@@ -39,6 +38,7 @@ public class LED extends LinearOpMode {
         resetLED();
         while (opModeIsActive()) {
             updateLED();
+
         }
     }
 }

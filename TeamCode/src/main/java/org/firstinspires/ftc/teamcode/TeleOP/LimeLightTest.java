@@ -4,6 +4,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -16,6 +17,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.List;
 
+@Disabled
 @TeleOp
 public class LimeLightTest extends OpMode {
     private Limelight3A limelight;
@@ -68,48 +70,44 @@ public class LimeLightTest extends OpMode {
     public void loop() {
 
 
-                double leftJoyStickXAxis = gamepad1.left_stick_x * 1.1; //1.1 use to counteract imperfect strafing
-                double leftJoyStickYAxis = -gamepad1.left_stick_y; //y stick value is reversed
-                double rightJoyStickXAxis = gamepad1.right_stick_x;
-                double botOrientation = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+        double leftJoyStickXAxis = gamepad1.left_stick_x * 1.1; //1.1 use to counteract imperfect strafing
+        double leftJoyStickYAxis = -gamepad1.left_stick_y; //y stick value is reversed
+        double rightJoyStickXAxis = gamepad1.right_stick_x;
+        double botOrientation = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
-                // Rotate the movement direction counter to the bot's rotation
-                double rotateX = leftJoyStickXAxis * Math.cos(-botOrientation) - leftJoyStickYAxis * Math.sin(-botOrientation);
-                double rotateY = leftJoyStickXAxis * Math.sin(-botOrientation) + leftJoyStickYAxis * Math.cos(-botOrientation);
+        // Rotate the movement direction counter to the bot's rotation
+        double rotateX = leftJoyStickXAxis * Math.cos(-botOrientation) - leftJoyStickYAxis * Math.sin(-botOrientation);
+        double rotateY = leftJoyStickXAxis * Math.sin(-botOrientation) + leftJoyStickYAxis * Math.cos(-botOrientation);
 
-                rotateX = rotateX * 1.1;  // Counteract imperfect strafing
-                // Denominator is the largest motor power (absolute value) or 1
-                // This ensures all the powers maintain the same ratio,
-                // but only if at least one is out of the range [-1, 1]
-                double denominator = Math.max(Math.abs(leftJoyStickYAxis) + Math.abs(leftJoyStickXAxis) + Math.abs(rightJoyStickXAxis), 1);
-                double frontLeftMotorPower = (rotateY + rotateX + rightJoyStickXAxis) / denominator;
-                double backLeftMotorPower = (rotateY - rotateX + rightJoyStickXAxis) / denominator;
-                double frontRightMotorPower = (rotateY - rotateX - rightJoyStickXAxis) / denominator;
-                double backRightMotorPower = (rotateY + rotateX - rightJoyStickXAxis) / denominator;
+        rotateX = rotateX * 1.1;  // Counteract imperfect strafing
+        // Denominator is the largest motor power (absolute value) or 1
+        // This ensures all the powers maintain the same ratio,
+        // but only if at least one is out of the range [-1, 1]
+        double denominator = Math.max(Math.abs(leftJoyStickYAxis) + Math.abs(leftJoyStickXAxis) + Math.abs(rightJoyStickXAxis), 1);
+        double frontLeftMotorPower = (rotateY + rotateX + rightJoyStickXAxis) / denominator;
+        double backLeftMotorPower = (rotateY - rotateX + rightJoyStickXAxis) / denominator;
+        double frontRightMotorPower = (rotateY - rotateX - rightJoyStickXAxis) / denominator;
+        double backRightMotorPower = (rotateY + rotateX - rightJoyStickXAxis) / denominator;
 
-                //Set motor power
-                Fl.setPower(frontLeftMotorPower * driveTrainPower);
-                Bl.setPower(backLeftMotorPower * driveTrainPower);
-                Br.setPower(backRightMotorPower * driveTrainPower);
-                Fr.setPower(frontRightMotorPower * driveTrainPower);
-
-
-                //IMU Reset
-                if (gamepad1.back) {
-                    imu.resetYaw();
-                }
-                if(gamepad1.b){
-                    shooter.setPower(0);
-                }
-
-                boolean limelightLoopEnabled = false;
+        //Set motor power
+        Fl.setPower(frontLeftMotorPower * driveTrainPower);
+        Bl.setPower(backLeftMotorPower * driveTrainPower);
+        Br.setPower(backRightMotorPower * driveTrainPower);
+        Fr.setPower(frontRightMotorPower * driveTrainPower);
 
 
-        if (gamepad1.aWasPressed()) {
-            limelightLoopEnabled = !limelightLoopEnabled;
+        //IMU Reset
+        if (gamepad1.back) {
+            imu.resetYaw();
+        }
+        if (gamepad1.b) {
+            shooter.setPower(0);
         }
 
-        if (limelightLoopEnabled){
+
+        if (gamepad1.a) {
+
+
             YawPitchRollAngles oriontation = imu.getRobotYawPitchRollAngles();
             limelight.updateRobotOrientation(oriontation.getYaw());
             LLResult llResult = limelight.getLatestResult();
@@ -133,17 +131,15 @@ public class LimeLightTest extends OpMode {
                         }
 
 
-
-
                     }
 
 
                 }
-            telemetry.addData("Tx", llResult.getTx());
-            telemetry.addData("Ty", llResult.getTy());
-            telemetry.addData("Ta", llResult.getTa());
-            telemetry.addData("power", shooter.getPower());
-            telemetry.update();
+                telemetry.addData("Tx", llResult.getTx());
+                telemetry.addData("Ty", llResult.getTy());
+                telemetry.addData("Ta", llResult.getTa());
+                telemetry.addData("power", shooter.getPower());
+                telemetry.update();
             }
         }
     }

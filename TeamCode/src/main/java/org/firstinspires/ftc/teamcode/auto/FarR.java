@@ -1,4 +1,6 @@
-package org.firstinspires.ftc.teamcode.Pratice;
+package org.firstinspires.ftc.teamcode.auto;
+
+
 import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -6,6 +8,7 @@ import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
@@ -24,7 +27,7 @@ import java.util.List;
 
 @Config
 @Autonomous
-public class FarB extends LinearOpMode {
+public class FarR extends LinearOpMode {
 
 
     public void initHardware() {
@@ -107,6 +110,7 @@ public class FarB extends LinearOpMode {
 
         double armDown = 0;
         double armUp = 0.15;
+        double sp = 0.10;
 
         double stopperu = 0.3;
         double stopperd = 0.3;
@@ -123,120 +127,242 @@ public class FarB extends LinearOpMode {
         LLResult llResult = limelight.getLatestResult();
 
 
-                TrajectoryActionBuilder tab1 = drive.actionBuilder( new Pose2d(0, 0, Math.toRadians(0)))
-                        //ppg
-                        .stopAndAdd(new Shooter(shooter,0.93,15))
-                        .waitSeconds(0.5)
-                        .lineToX(10)
-                        .turn(Math.toRadians(20))
+        TrajectoryActionBuilder tab1 = drive.actionBuilder( new Pose2d(0, 0, Math.toRadians(0)))
+                //ppg
+                .stopAndAdd(new Shooter(shooter,0.93,15))
+                .waitSeconds(0.5)
+                .lineToX(10)
+                .turn(Math.toRadians(-20))
 
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm, armUp))
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm, armDown))//shot1
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armDown))//shot1
 
-                        .stopAndAdd(new Revolver(revolver, slot1))
-                        .waitSeconds(2)
-                        .stopAndAdd(new armAction(arm, armUp))
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm, armDown))//slot2
-                        .waitSeconds(1)
+                .stopAndAdd(new Revolver(revolver, slot1))
+                .waitSeconds(2)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armDown))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, sp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armDown))//slot2
+                .waitSeconds(1)
 
-                        .stopAndAdd(new Revolver(revolver, slot2))
-                        .waitSeconds(1.3)
-                        .stopAndAdd(new armAction(arm, armUp))
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm, armDown))//shot3
-                        .waitSeconds(1)
+                .stopAndAdd(new Revolver(revolver, slot2))
+                .waitSeconds(1.3)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armDown))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, sp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armDown))
+                //shot3
+                .waitSeconds(1)
 
-                        .lineToX(56)
-                        .stopAndAdd(new intakeAction(intake, in, 10))
-                        .turn(Math.toRadians(67));
+                .strafeToLinearHeading(new Vector2d(34, -8), Math.toRadians(-91), (pose2dDual, posePath, v) -> 40)
+                .stopAndAdd(new intakeAction(intake, in, 10))
+                .stopAndAdd(new stopperAction(stopper,stopperd))
+                // .turn(Math.toRadians(64))
+                .lineToX(33.4)
+                .waitSeconds(1)
+                /*
+                .stopAndAdd(new Revolver(revolver, slot2))
+                .waitSeconds(1)
+                .lineToX(63.5)
+
+                 */
+                .stopAndAdd(new stopperAction(stopper,stopperu))
+                .strafeToLinearHeading(new Vector2d(14, 1), Math.toRadians(-20), (pose2dDual, posePath, v) -> 40)
+
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, sp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armDown))
+                .waitSeconds(0.2)
+
+                .stopAndAdd(new Revolver(revolver, slot2))
+                .waitSeconds(2.5)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armDown))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armDown))//slot2
+                .waitSeconds(1)
+                .lineToX(50) ;
 
 
 
 
-                TrajectoryActionBuilder tab2 = drive.actionBuilder(new Pose2d(0, 0, 0))
-                        //pgp
-                        .stopAndAdd(new Shooter(shooter,0.9,15))
-                        .waitSeconds(0.5)
-                        .lineToX(10)
-                        .turn(Math.toRadians(20))
+        TrajectoryActionBuilder tab2 = drive.actionBuilder(new Pose2d(0, 0, 0))
+                //pgp
+                .stopAndAdd(new Shooter(shooter,0.93,15))
+                .waitSeconds(0.7)
+                .lineToX(10)
+                .turn(Math.toRadians(-20))
 
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm, armUp))
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm, armDown))//shot1
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armDown))//shot1
 
-                        .stopAndAdd(new Revolver(revolver, slot2))
-                        .waitSeconds(2)
-                        .stopAndAdd(new armAction(arm, armUp))
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm, armDown))//slot2
-                        .waitSeconds(1)
+                .stopAndAdd(new Revolver(revolver, slot2))
+                .waitSeconds(2)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armDown))//slot2
+                .waitSeconds(1)
 
-                        .stopAndAdd(new Revolver(revolver, slot3))
-                        .waitSeconds(1.3)
-                        .stopAndAdd(new armAction(arm, armUp))
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm, armDown))//shot3
-                        .waitSeconds(1)
+                .stopAndAdd(new Revolver(revolver, slot3))
+                .waitSeconds(1.3)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armDown))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, sp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armDown))//shot3
+                .waitSeconds(1)
 
 
-                        .lineToX(56)
-                        .stopAndAdd(new intakeAction(intake, in, 10))
-                        .turn(Math.toRadians(66 + 1))//aka 67
-                        .lineToX(60);
+
+                .strafeToLinearHeading(new Vector2d(34, -8), Math.toRadians(-91), (pose2dDual, posePath, v) -> 40)
+                .stopAndAdd(new intakeAction(intake, in, 10))
+                .stopAndAdd(new stopperAction(stopper,stopperd))
+                // .turn(Math.toRadians(64))
+                .lineToX(33.4)
+                .waitSeconds(1)
+                /*
+                .stopAndAdd(new Revolver(revolver, slot2))
+                .waitSeconds(1)
+                .lineToX(63.5)
+
+                 */
+                .stopAndAdd(new stopperAction(stopper,stopperu))
+                .strafeToLinearHeading(new Vector2d(16, 1), Math.toRadians(-20), (pose2dDual, posePath, v) -> 40)
+
+
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, sp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armDown))
+                .waitSeconds(0.2)
+
+                .stopAndAdd(new Revolver(revolver, slot2))
+                .waitSeconds(2.5)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armDown))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armDown))//slot2
+                .waitSeconds(1)
+                .lineToX(50) ;
 
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(new Pose2d(0, 0, 0))
 
-                        //gpp
-                        .stopAndAdd(new Shooter(shooter,0.9,15))
-                        .stopAndAdd(new Revolver(revolver, g))
-                        .waitSeconds(0.5)
-                        .lineToX(10)
-                        .turn(Math.toRadians(20))
+                //gpp
+                .stopAndAdd(new Shooter(shooter,0.93,15))
+                .stopAndAdd(new Revolver(revolver, g))
+                .waitSeconds(0.5)
+                .lineToX(10)
+                .turn(Math.toRadians(-20))
 
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm, armUp))
-                        .waitSeconds(0.2)
-                        .stopAndAdd(new armAction(arm, armDown))//shot1
-                .waitSeconds(0.2)
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, sp))
+                .waitSeconds(0.5)
                 .stopAndAdd(new armAction(arm, armUp))
                 .waitSeconds(0.2)
                 .stopAndAdd(new armAction(arm, armDown))
+                .waitSeconds(0.2)
 
 
-                        .stopAndAdd(new Revolver(revolver, p1))
-                        .waitSeconds(2.5)
-                        .stopAndAdd(new armAction(arm, armUp))
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm, armDown))
-                        .waitSeconds(0.2)
-                        .stopAndAdd(new armAction(arm, armUp))
-                        .waitSeconds(0.2)
-                         .stopAndAdd(new armAction(arm, armDown))//slot2
-                        .waitSeconds(1)
 
-                        .stopAndAdd(new Revolver(revolver, p2))
-                        .waitSeconds(1.3)
-                        .stopAndAdd(new armAction(arm, armUp))
-                        .waitSeconds(0.5)
-                        .stopAndAdd(new armAction(arm, armDown))//shot3
-                        .waitSeconds(1)
+                .stopAndAdd(new Revolver(revolver, p1))
+                .waitSeconds(2.5)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armDown))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armDown))//slot2
+                .waitSeconds(1)
+
+                .stopAndAdd(new Revolver(revolver, p2))
+                .waitSeconds(1.6)
+                .stopAndAdd(new armAction(arm, sp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armDown))//shot3
+                .waitSeconds(1)
 
 
-                .lineToX(56)
+                // .lineToX(58)
+                .strafeToLinearHeading(new Vector2d(34, -8), Math.toRadians(-91), (pose2dDual, posePath, v) -> 40)
                 .stopAndAdd(new intakeAction(intake, in, 10))
-                .turn(Math.toRadians(67))
-                .lineToX(57);
+                .stopAndAdd(new stopperAction(stopper,stopperd))
+                // .turn(Math.toRadians(64))
+                .lineToX(33.4)
+                .waitSeconds(1)
+                /*
+                .stopAndAdd(new Revolver(revolver, slot2))
+                .waitSeconds(1)
+                .lineToX(63.5)
+
+                 */
+                .stopAndAdd(new stopperAction(stopper,stopperu))
+                .strafeToLinearHeading(new Vector2d(16, 1), Math.toRadians(-20), (pose2dDual, posePath, v) -> 40)
+
+                // .stopAndAdd(new Revolver(revolver, p2))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, sp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armDown))
+                .waitSeconds(0.2)
+
+
+/*
+                .stopAndAdd(new Revolver(revolver, g))
+                .waitSeconds(2.5)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.5)
+                .stopAndAdd(new armAction(arm, armDown))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armUp))
+                .waitSeconds(0.2)
+                .stopAndAdd(new armAction(arm, armDown))//slot2
+
+ */
+                .waitSeconds(1)
+                .lineToX(50);
+
+
 
 
 
 
         Action trajectoryActionCloseOut = tab1.endTrajectory().fresh()
-                        .build();
+                .build();
 
 
         if (llResult != null && llResult.isValid()) {
